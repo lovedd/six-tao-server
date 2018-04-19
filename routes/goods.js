@@ -19,7 +19,11 @@ mongoose.connection.on('disconnected', () => {
 
 /* GET goods */
 router.get('/', function (req, res, next) {
-    Good.find({}, (err, doc) => {
+    // 只有接口请求带参数sort=priceDown才会按价格降序
+    let sort = req.query['sort'] === 'priceDown'?-1:1;
+    let query = Good.find({});
+    query.sort({salePrice: sort});
+    query.exec((err, doc) => {
         if (err) {
             res.json({
                 code: '900',
@@ -32,7 +36,7 @@ router.get('/', function (req, res, next) {
                 result: doc
             })
         }
-    })
+    });
 });
 
 module.exports = router;
