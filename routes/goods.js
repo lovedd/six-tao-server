@@ -21,7 +21,19 @@ mongoose.connection.on('disconnected', () => {
 router.get('/', function (req, res, next) {
     // 只有接口请求带参数sort=priceDown才会按价格降序
     let sort = req.query['sort'] === 'priceDown'?-1:1;
-    let query = Good.find({});
+    let startPrice = req.query['startPrice'];
+    let endPrice = req.query['endPrice'];
+    startPrice = startPrice? parseInt(startPrice):0;
+    endPrice = endPrice?parseInt(endPrice):undefined;
+    console.log(startPrice, endPrice);
+    let params = {};
+    if (endPrice) {
+        params = {salePrice: {$gt: startPrice, $lte: endPrice}};
+    } else {
+        params = {salePrice: {$gt: startPrice}};
+    }
+    // 查询起始价（不包含）到结尾价（包含）区间的商品
+    let query = Good.find(params);
     query.sort({salePrice: sort});
     query.exec((err, doc) => {
         if (err) {
