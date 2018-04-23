@@ -23,6 +23,10 @@ router.get('/', function (req, res, next) {
     let sort = req.query['sort'] === 'priceDown'?-1:1;
     let startPrice = req.query['startPrice'];
     let endPrice = req.query['endPrice'];
+    let page = parseInt(req.query['page']);
+    let pageSize = parseInt(req.query['pageSize']);
+
+    // 价格筛选处理逻辑
     startPrice = startPrice? parseInt(startPrice):0;
     endPrice = endPrice?parseInt(endPrice):undefined;
     console.log(startPrice, endPrice);
@@ -32,8 +36,19 @@ router.get('/', function (req, res, next) {
     } else {
         params = {salePrice: {$gt: startPrice}};
     }
-    // 查询起始价（不包含）到结尾价（包含）区间的商品
-    let query = Good.find(params);
+
+    // 分页处理逻辑
+    if (!(page > 0 && pageSize > 0)) {
+        res.json({
+            code: '801',
+            msg: '请求参数有误'
+        });
+        return;
+    }
+    let skip = (page - 1)*pageSize;
+
+    // 查询起始价（不包含）到结尾价（包含）区间的商品,并分页返回
+    let query = Good.find(params).skip(skip).limit(pageSize);
     query.sort({salePrice: sort});
     query.exec((err, doc) => {
         if (err) {
@@ -45,7 +60,10 @@ router.get('/', function (req, res, next) {
             res.json({
                 code: '000',
                 msg: '',
-                result: doc
+                result: {
+                    count: doc.length,
+                    list: doc
+                }
             })
         }
     });
